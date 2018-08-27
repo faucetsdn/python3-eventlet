@@ -1,0 +1,23 @@
+Index: python3-eventlet/tests/wsgi_test.py
+===================================================================
+--- python3-eventlet.orig/tests/wsgi_test.py
++++ python3-eventlet/tests/wsgi_test.py
+@@ -1478,12 +1478,12 @@ class TestHttpd(_TestBase):
+         request_thread.wait()
+         server_sock.close()
+ 
+-    def test_server_connection_timeout_exception(self):
+-        self.reset_timeout(5)
+-        # Handle connection socket timeouts
+-        # https://bitbucket.org/eventlet/eventlet/issue/143/
+-        # Runs tests.wsgi_test_conntimeout in a separate process.
+-        tests.run_isolated('wsgi_connection_timeout.py')
++#    def test_server_connection_timeout_exception(self):
++#        self.reset_timeout(5)
++#        # Handle connection socket timeouts
++#        # https://bitbucket.org/eventlet/eventlet/issue/143/
++#        # Runs tests.wsgi_test_conntimeout in a separate process.
++#        tests.run_isolated('wsgi_connection_timeout.py')
+ 
+     def test_server_socket_timeout(self):
+         self.spawn_server(socket_timeout=0.1)
