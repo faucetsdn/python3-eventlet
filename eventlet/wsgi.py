@@ -11,8 +11,8 @@ from eventlet import greenio
 from eventlet import support
 from eventlet.green import BaseHTTPServer
 from eventlet.green import socket
-from eventlet.support import six
-from eventlet.support.six.moves import urllib
+import six
+from six.moves import urllib
 
 
 DEFAULT_MAX_SIMULTANEOUS_REQUESTS = 1024
@@ -57,6 +57,14 @@ def addr_to_host_port(addr):
         host = addr[0]
         port = addr[1]
     return (host, port)
+
+
+def encode_dance(s):
+    if not isinstance(s, bytes):
+        s = s.encode('utf-8', 'replace')
+    if six.PY2:
+        return s
+    return s.decode('latin1')
 
 
 # Collections of error codes to compare against.  Not all attributes are set
@@ -631,7 +639,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
 
         pq = self.path.split('?', 1)
         env['RAW_PATH_INFO'] = pq[0]
-        env['PATH_INFO'] = urllib.parse.unquote(pq[0])
+        env['PATH_INFO'] = encode_dance(urllib.parse.unquote(pq[0]))
         if len(pq) > 1:
             env['QUERY_STRING'] = pq[1]
 
@@ -664,7 +672,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             headers = [h.split(':', 1) for h in headers]
 
-        env['headers_raw'] = headers_raw = tuple((k, v.strip()) for k, v in headers)
+        env['headers_raw'] = headers_raw = tuple((k, v.strip(' \t\n\r')) for k, v in headers)
         for k, v in headers_raw:
             k = k.replace('-', '_').upper()
             if k in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
