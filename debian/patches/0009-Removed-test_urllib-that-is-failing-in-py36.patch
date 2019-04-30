@@ -4,13 +4,10 @@ Date: Tue, 14 Nov 2017 22:27:34 +0100
 Subject: Removed test_urllib that is failing in py36
 
 ---
- tests/test__greenness.py | 51 ------------------------------------------------
+ tests/test__greenness.py | 51 ----------------------------------------
  1 file changed, 51 deletions(-)
  delete mode 100644 tests/test__greenness.py
 
-diff --git a/tests/test__greenness.py b/tests/test__greenness.py
-deleted file mode 100644
-index 37a77d7..0000000
 --- a/tests/test__greenness.py
 +++ /dev/null
 @@ -1,51 +0,0 @@
@@ -20,7 +17,7 @@ index 37a77d7..0000000
 -"""
 -import eventlet
 -from eventlet.green import BaseHTTPServer
--from eventlet.support import six
+-import six
 -
 -if six.PY2:
 -    from eventlet.green.urllib2 import HTTPError, urlopen

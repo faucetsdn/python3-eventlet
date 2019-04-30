@@ -3,5 +3,9 @@
 0003-Allow-more-busy-CPU.patch
 0004-Remove-networking-tests.patch
 0006-Patch-out-intersphinx.patch
-0008-Disable-test_server_connection_timeout_exception.patch
 0009-Removed-test_urllib-that-is-failing-in-py36.patch
+0010-Fix-compilation-errors-when-installing-package-in-Py.patch
+0013-New_test_crt.patch
+0014-Fix-for-Python-3.7.patch
+0015-IMPORTANT-late-import-in-use_hub-thread-race-caused-.patch
+0016-Issue-535-use-Python-2-compatible-syntax-for-keyword.patch

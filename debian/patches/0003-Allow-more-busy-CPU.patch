@@ -1,8 +1,19 @@
-Index: python3-eventlet/tests/zmq_test.py
-===================================================================
---- python3-eventlet.orig/tests/zmq_test.py
-+++ python3-eventlet/tests/zmq_test.py
-@@ -449,7 +449,7 @@ class TestUpstreamDownStream(tests.Limit
+From 986d37bfaee7fc148694bb3f15dd41515f3e2f6d Mon Sep 17 00:00:00 2001
+From: Thomas Goirand <zigo@debian.org>
+Date: Fri, 4 Aug 2017 21:47:16 +0200
+Subject: Allow more busy CPU
+
+ The tests assume a fast CPU, but under my VMs, the tests are just failing
+ with the CPU being more than 10% busy.
+Forwarded: no
+Last-Update: 2016-07-19
+---
+ tests/zmq_test.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/tests/zmq_test.py
++++ b/tests/zmq_test.py
+@@ -449,7 +449,7 @@
          self.sockets.append(sock)
          sock.bind_to_random_port("tcp://127.0.0.1")
          eventlet.sleep()
@@ -11,7 +22,7 @@ Index: python3-eventlet/tests/zmq_test.py
  
      @tests.skip_unless(zmq_supported)
      def test_cpu_usage_after_pub_send_or_dealer_recv(self):
-@@ -461,14 +461,14 @@ class TestUpstreamDownStream(tests.Limit
+@@ -461,14 +461,14 @@
          sub.setsockopt(zmq.SUBSCRIBE, b"")
          eventlet.sleep()
          pub.send(b'test_send')

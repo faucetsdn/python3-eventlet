@@ -1,8 +1,59 @@
-python-eventlet (0.22.1-4) unstable; urgency=medium
+python-eventlet (0.24.1-1) unstable; urgency=medium
 
   * New upstream release.
 
- -- Brad Cowie <brad@faucet.nz>  Mon, 27 Aug 2018 12:57:04 +1200
+ -- Brad Cowie <brad@faucet.nz>  Tue, 30 Apr 2019 16:02:24 +1200
+
+python-eventlet (0.24.1-0ubuntu3) disco; urgency=medium
+
+  * d/p/0016-*.patch: Replace patch with proper fix cherry-picked from
+    upstream master branch (LP: #1809033).
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Fri, 21 Dec 2018 09:16:24 -0500
+
+python-eventlet (0.24.1-0ubuntu2) disco; urgency=medium
+
+  * d/p/0016-endheaders-py27-work-around.patch: Patch the endheaders
+    method definition to drop the "*" parameter for now as it is not
+    valid for Python 2.7 (LP: #1809033).
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Tue, 18 Dec 2018 14:58:36 -0500
+
+python-eventlet (0.24.1-0ubuntu1) disco; urgency=medium
+
+  * d/gbp.conf: Update gbp configuration file.
+  * d/control: Update Vcs-* links and maintainers.
+  * New upstream release.
+  * d/control: Align (Build-)Depends with upstream.
+  * d/p/0003-Allow-more-busy-CPU.patch,
+    d/p/0009-Removed-test_urllib-that-is-failing-in-py36.patch,
+    d/p/0014-Fix-for-Python-3.7.patch: Rebased.
+  * d/p/0007-Patched-test_getaddrinfo-due-netbase-update.patch,
+    d/p/0008-Disable-test_server_connection_timeout_exception.patch,
+    d/p/0012-ssl-RecursionError-on-Python3.6.patch: Dropped. Fixed in new
+    upstream release.
+  * d/p/0005-Removed-failing-test.patch,
+    d/p/0011-Avoid-dependency-on-enum-compat.patch: Dropped. No longer needed.
+  * d/p/0015-IMPORTANT-late-import-in-use_hub-thread-race-caused-.patch:
+    Cherry-picked from upstream master branch.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Mon, 17 Dec 2018 08:38:17 -0500
+
+python-eventlet (0.20.0-5) unstable; urgency=medium
+
+  * Don't reset http{,s}_proxy, pybuild sets it correctly
+  * d/control: Set Vcs-* to salsa.debian.org
+  * d/copyright: Bump my copyright year
+  * Fix RecursionError in ssl on Python3.6+ (Closes: #901772)
+  * Convert git repository from git-dpm to gbp layout
+  * d/p/0013-New_test_crt.patch: Add, regenerate test crt
+  * Use 'python3 -m sphinx' instead of sphinx-build for building docs
+  * Fix Python 3.7 (Closes: #903609)
+  * Bump debhelper compat level to 11
+  * Standards version is 4.2.1 now (no changes)
+  * Add upstream metadata
+
+ -- Ondřej Nový <onovy@debian.org>  Sun, 30 Sep 2018 14:39:27 +0200
 
 python-eventlet (0.20.0-4) unstable; urgency=medium
 

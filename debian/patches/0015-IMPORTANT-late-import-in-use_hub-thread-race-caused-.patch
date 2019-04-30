@@ -1,0 +1,717 @@
+From 77bccbe48d4d9a46982b2e0503e76784e76b066a Mon Sep 17 00:00:00 2001
+From: Sergey Shepelev <temotor@gmail.com>
+Date: Sun, 2 Sep 2018 01:38:23 +0500
+Subject: [PATCH] IMPORTANT: late import in `use_hub()` + thread race caused
+ using epolls even when it is unsupported on current platform
+
+Solution: eager import all built-in hubs, explicitly check support later
+
+https://github.com/eventlet/eventlet/issues/466
+---
+ eventlet/hubs/__init__.py                | 103 +++++++++++------------
+ eventlet/hubs/epolls.py                  |  39 +++------
+ eventlet/hubs/hub.py                     |   5 +-
+ eventlet/hubs/kqueue.py                  |  34 ++++----
+ eventlet/hubs/poll.py                    |  38 +++++----
+ eventlet/hubs/pyevent.py                 |  10 ++-
+ eventlet/hubs/selects.py                 |  38 +++++----
+ eventlet/hubs/timer.py                   |   6 +-
+ tests/hub_test.py                        |  56 ++----------
+ tests/isolated/hub_kqueue_unsupported.py |  28 ++++++
+ tests/isolated/hub_use_hub_class.py      |  13 +++
+ 11 files changed, 182 insertions(+), 188 deletions(-)
+ create mode 100644 tests/isolated/hub_kqueue_unsupported.py
+ create mode 100644 tests/isolated/hub_use_hub_class.py
+
+diff --git a/eventlet/hubs/__init__.py b/eventlet/hubs/__init__.py
+index fc5d3f3..867628c 100644
+--- a/eventlet/hubs/__init__.py
++++ b/eventlet/hubs/__init__.py
+@@ -1,4 +1,7 @@
++import importlib
++import inspect
+ import os
++import warnings
+ 
+ from eventlet import patcher
+ from eventlet.support import greenlets as greenlet
+@@ -11,6 +14,15 @@ threading = patcher.original('threading')
+ _threadlocal = threading.local()
+ 
+ 
++# order is important, get_default_hub returns first available from here
++builtin_hub_names = ('epolls', 'kqueue', 'poll', 'selects')
++builtin_hub_modules = tuple(importlib.import_module('eventlet.hubs.' + name) for name in builtin_hub_names)
++
++
++class HubError(Exception):
++    pass
++
++
+ def get_default_hub():
+     """Select the default hub implementation based on what multiplexing
+     libraries are installed.  The order that the hubs are tried is:
+@@ -26,44 +38,33 @@ def get_default_hub():
+     .. include:: ../doc/common.txt
+     .. note :: |internal|
+     """
++    for mod in builtin_hub_modules:
++        if mod.is_available():
++            return mod
+ 
+-    # pyevent hub disabled for now because it is not thread-safe
+-    # try:
+-    #    import eventlet.hubs.pyevent
+-    #    return eventlet.hubs.pyevent
+-    # except:
+-    #    pass
+-
+-    select = patcher.original('select')
+-    try:
+-        import eventlet.hubs.epolls
+-        return eventlet.hubs.epolls
+-    except ImportError:
+-        try:
+-            import eventlet.hubs.kqueue
+-            return eventlet.hubs.kqueue
+-        except ImportError:
+-            if hasattr(select, 'poll'):
+-                import eventlet.hubs.poll
+-                return eventlet.hubs.poll
+-            else:
+-                import eventlet.hubs.selects
+-                return eventlet.hubs.selects
++    raise HubError('no built-in hubs are available: {}'.format(builtin_hub_modules))
+ 
+ 
+ def use_hub(mod=None):
+     """Use the module *mod*, containing a class called Hub, as the
+     event hub. Usually not required; the default hub is usually fine.
+ 
+-    Mod can be an actual module, a string, or None.  If *mod* is a module,
+-    it uses it directly.   If *mod* is a string and contains either '.' or ':'
+-    use_hub tries to import the hub using the 'package.subpackage.module:Class'
+-    convention, otherwise use_hub looks for a matching setuptools entry point
+-    in the 'eventlet.hubs' group to load or finally tries to import
+-    `eventlet.hubs.mod` and use that as the hub module.  If *mod* is None,
+-    use_hub uses the default hub.  Only call use_hub during application
+-    initialization,  because it resets the hub's state and any existing
++    `mod` can be an actual hub class, a module, a string, or None.
++
++    If `mod` is a class, use it directly.
++    If `mod` is a module, use `module.Hub` class
++    If `mod` is a string and contains either '.' or ':'
++    then `use_hub` uses 'package.subpackage.module:Class' convention,
++    otherwise imports `eventlet.hubs.mod`.
++    If `mod` is None, `use_hub` uses the default hub.
++
++    Only call use_hub during application initialization,
++    because it resets the hub's state and any existing
+     timers or listeners will never be resumed.
++
++    These two threadlocal attributes are not part of Eventlet public API:
++    - `threadlocal.Hub` (capital H) is hub constructor, used when no hub is currently active
++    - `threadlocal.hub` (lowercase h) is active hub instance
+     """
+     if mod is None:
+         mod = os.environ.get('EVENTLET_HUB', None)
+@@ -71,36 +72,30 @@ def use_hub(mod=None):
+         mod = get_default_hub()
+     if hasattr(_threadlocal, 'hub'):
+         del _threadlocal.hub
++
++    classname = ''
+     if isinstance(mod, six.string_types):
+         assert mod.strip(), "Need to specify a hub"
+         if '.' in mod or ':' in mod:
+             modulename, _, classname = mod.strip().partition(':')
+-            mod = __import__(modulename, globals(), locals(), [classname])
+-            if classname:
+-                mod = getattr(mod, classname)
+         else:
+-            found = False
+-
+-            # setuptools 5.4.1 test_import_patched_defaults fail
+-            # https://github.com/eventlet/eventlet/issues/177
+-            try:
+-                # try and import pkg_resources ...
+-                import pkg_resources
+-            except ImportError:
+-                # ... but do not depend on it
+-                pkg_resources = None
+-            if pkg_resources is not None:
+-                for entry in pkg_resources.iter_entry_points(
+-                        group='eventlet.hubs', name=mod):
+-                    mod, found = entry.load(), True
+-                    break
+-            if not found:
+-                mod = __import__(
+-                    'eventlet.hubs.' + mod, globals(), locals(), ['Hub'])
+-    if hasattr(mod, 'Hub'):
+-        _threadlocal.Hub = mod.Hub
++            modulename = 'eventlet.hubs.' + mod
++        mod = importlib.import_module(modulename)
++
++    if hasattr(mod, 'is_available'):
++        if not mod.is_available():
++            raise Exception('selected hub is not available on this system mod={}'.format(mod))
+     else:
+-        _threadlocal.Hub = mod
++        msg = '''Please provide `is_available()` function in your custom Eventlet hub {mod}.
++It must return bool: whether hub supports current platform. See eventlet/hubs/{{epoll,kqueue}} for example.
++'''.format(mod=mod)
++        warnings.warn(msg, DeprecationWarning, stacklevel=3)
++
++    hubclass = mod
++    if not inspect.isclass(mod):
++        hubclass = getattr(mod, classname or 'Hub')
++
++    _threadlocal.Hub = hubclass
+ 
+ 
+ def get_hub():
+diff --git a/eventlet/hubs/epolls.py b/eventlet/hubs/epolls.py
+index c338756..07fec14 100644
+--- a/eventlet/hubs/epolls.py
++++ b/eventlet/hubs/epolls.py
+@@ -1,40 +1,29 @@
+ import errno
+-from eventlet.support import get_errno
+-from eventlet import patcher
++from eventlet import patcher, support
++from eventlet.hubs import hub, poll
+ select = patcher.original('select')
+-if not hasattr(select, 'epoll'):
+-    # TODO: remove mention of python-epoll on 2019-01
+-    raise ImportError('No epoll implementation found in select module.'
+-                      ' python-epoll (or similar) package support was removed,'
+-                      ' please open issue on https://github.com/eventlet/eventlet/'
+-                      ' if you must use epoll outside stdlib.')
+-epoll = select.epoll
+ 
+-from eventlet.hubs.hub import BaseHub
+-from eventlet.hubs import poll
+-from eventlet.hubs.poll import READ, WRITE
+ 
+-# NOTE: we rely on the fact that the epoll flag constants
+-# are identical in value to the poll constants
++def is_available():
++    return hasattr(select, 'epoll')
+ 
+ 
++# NOTE: we rely on the fact that the epoll flag constants
++# are identical in value to the poll constants
+ class Hub(poll.Hub):
+     def __init__(self, clock=None):
+-        BaseHub.__init__(self, clock)
+-        self.poll = epoll()
++        super(Hub, self).__init__(clock=clock)
++        self.poll = select.epoll()
+ 
+     def add(self, evtype, fileno, cb, tb, mac):
+-        oldlisteners = bool(self.listeners[READ].get(fileno) or
+-                            self.listeners[WRITE].get(fileno))
+-        listener = BaseHub.add(self, evtype, fileno, cb, tb, mac)
++        oldlisteners = bool(self.listeners[self.READ].get(fileno) or
++                            self.listeners[self.WRITE].get(fileno))
++        # not super() to avoid double register()
++        listener = hub.BaseHub.add(self, evtype, fileno, cb, tb, mac)
+         try:
+-            if not oldlisteners:
+-                # Means we've added a new listener
+-                self.register(fileno, new=True)
+-            else:
+-                self.register(fileno, new=False)
++            self.register(fileno, new=not oldlisteners)
+         except IOError as ex:    # ignore EEXIST, #80
+-            if get_errno(ex) != errno.EEXIST:
++            if support.get_errno(ex) != errno.EEXIST:
+                 raise
+         return listener
+ 
+diff --git a/eventlet/hubs/hub.py b/eventlet/hubs/hub.py
+index 112f467..8871082 100644
+--- a/eventlet/hubs/hub.py
++++ b/eventlet/hubs/hub.py
+@@ -19,7 +19,8 @@ else:
+             signal.alarm(math.ceil(seconds))
+         arm_alarm = alarm_signal
+ 
+-from eventlet.hubs import timer, IOClosed
++import eventlet.hubs
++from eventlet.hubs import timer
+ from eventlet.support import greenlets as greenlet, clear_sys_exc_info
+ import monotonic
+ import six
+@@ -265,7 +266,7 @@ class BaseHub(object):
+         listener = self.closed.pop()
+         if not listener.greenlet.dead:
+             # There's no point signalling a greenlet that's already dead.
+-            listener.tb(IOClosed(errno.ENOTCONN, "Operation on closed file"))
++            listener.tb(eventlet.hubs.IOClosed(errno.ENOTCONN, "Operation on closed file"))
+ 
+     def ensure_greenlet(self):
+         if self.greenlet.dead:
+diff --git a/eventlet/hubs/kqueue.py b/eventlet/hubs/kqueue.py
+index 0e60d33..bad4a87 100644
+--- a/eventlet/hubs/kqueue.py
++++ b/eventlet/hubs/kqueue.py
+@@ -1,25 +1,24 @@
+ import os
+ import sys
+ from eventlet import patcher, support
++from eventlet.hubs import hub
+ import six
+ select = patcher.original('select')
+ time = patcher.original('time')
+ 
+-from eventlet.hubs.hub import BaseHub, READ, WRITE, noop
+ 
++def is_available():
++    return hasattr(select, 'kqueue')
+ 
+-if getattr(select, 'kqueue', None) is None:
+-    raise ImportError('No kqueue implementation found in select module')
+ 
+-
+-FILTERS = {READ: select.KQ_FILTER_READ,
+-           WRITE: select.KQ_FILTER_WRITE}
+-
+-
+-class Hub(BaseHub):
++class Hub(hub.BaseHub):
+     MAX_EVENTS = 100
+ 
+     def __init__(self, clock=None):
++        self.FILTERS = {
++            hub.READ: select.KQ_FILTER_READ,
++            hub.WRITE: select.KQ_FILTER_WRITE,
++        }
+         super(Hub, self).__init__(clock)
+         self._events = {}
+         self._init_kqueue()
+@@ -31,10 +30,9 @@ class Hub(BaseHub):
+     def _reinit_kqueue(self):
+         self.kqueue.close()
+         self._init_kqueue()
+-        kqueue = self.kqueue
+         events = [e for i in six.itervalues(self._events)
+                   for e in six.itervalues(i)]
+-        kqueue.control(events, 0, 0)
++        self.kqueue.control(events, 0, 0)
+ 
+     def _control(self, events, max_events, timeout):
+         try:
+@@ -51,7 +49,7 @@ class Hub(BaseHub):
+         events = self._events.setdefault(fileno, {})
+         if evtype not in events:
+             try:
+-                event = select.kevent(fileno, FILTERS.get(evtype), select.KQ_EV_ADD)
++                event = select.kevent(fileno, self.FILTERS.get(evtype), select.KQ_EV_ADD)
+                 self._control([event], 0, 0)
+                 events[evtype] = event
+             except ValueError:
+@@ -90,8 +88,8 @@ class Hub(BaseHub):
+             pass
+ 
+     def wait(self, seconds=None):
+-        readers = self.listeners[READ]
+-        writers = self.listeners[WRITE]
++        readers = self.listeners[self.READ]
++        writers = self.listeners[self.WRITE]
+ 
+         if not readers and not writers:
+             if seconds:
+@@ -103,10 +101,10 @@ class Hub(BaseHub):
+             fileno = event.ident
+             evfilt = event.filter
+             try:
+-                if evfilt == FILTERS[READ]:
+-                    readers.get(fileno, noop).cb(fileno)
+-                if evfilt == FILTERS[WRITE]:
+-                    writers.get(fileno, noop).cb(fileno)
++                if evfilt == select.KQ_FILTER_READ:
++                    readers.get(fileno, hub.noop).cb(fileno)
++                if evfilt == select.KQ_FILTER_WRITE:
++                    writers.get(fileno, hub.noop).cb(fileno)
+             except SYSTEM_EXCEPTIONS:
+                 raise
+             except:
+diff --git a/eventlet/hubs/poll.py b/eventlet/hubs/poll.py
+index 17bc9e7..1bbd401 100644
+--- a/eventlet/hubs/poll.py
++++ b/eventlet/hubs/poll.py
+@@ -1,21 +1,22 @@
+ import errno
+ import sys
+ 
+-from eventlet import patcher
++from eventlet import patcher, support
++from eventlet.hubs import hub
+ select = patcher.original('select')
+ time = patcher.original('time')
+ 
+-from eventlet.hubs.hub import BaseHub, READ, WRITE, noop
+-from eventlet.support import get_errno, clear_sys_exc_info
+ 
+-EXC_MASK = select.POLLERR | select.POLLHUP
+-READ_MASK = select.POLLIN | select.POLLPRI
+-WRITE_MASK = select.POLLOUT
++def is_available():
++    return hasattr(select, 'poll')
+ 
+ 
+-class Hub(BaseHub):
++class Hub(hub.BaseHub):
+     def __init__(self, clock=None):
+         super(Hub, self).__init__(clock)
++        self.EXC_MASK = select.POLLERR | select.POLLHUP
++        self.READ_MASK = select.POLLIN | select.POLLPRI
++        self.WRITE_MASK = select.POLLOUT
+         self.poll = select.poll()
+ 
+     def add(self, evtype, fileno, cb, tb, mac):
+@@ -29,10 +30,10 @@ class Hub(BaseHub):
+ 
+     def register(self, fileno, new=False):
+         mask = 0
+-        if self.listeners[READ].get(fileno):
+-            mask |= READ_MASK | EXC_MASK
+-        if self.listeners[WRITE].get(fileno):
+-            mask |= WRITE_MASK | EXC_MASK
++        if self.listeners[self.READ].get(fileno):
++            mask |= self.READ_MASK | self.EXC_MASK
++        if self.listeners[self.WRITE].get(fileno):
++            mask |= self.WRITE_MASK | self.EXC_MASK
+         try:
+             if mask:
+                 if new:
+@@ -68,8 +69,8 @@ class Hub(BaseHub):
+         return self.poll.poll(int(seconds * 1000.0))
+ 
+     def wait(self, seconds=None):
+-        readers = self.listeners[READ]
+-        writers = self.listeners[WRITE]
++        readers = self.listeners[self.READ]
++        writers = self.listeners[self.WRITE]
+ 
+         if not readers and not writers:
+             if seconds:
+@@ -78,7 +79,7 @@ class Hub(BaseHub):
+         try:
+             presult = self.do_poll(seconds)
+         except (IOError, select.error) as e:
+-            if get_errno(e) == errno.EINTR:
++            if support.get_errno(e) == errno.EINTR:
+                 return
+             raise
+         SYSTEM_EXCEPTIONS = self.SYSTEM_EXCEPTIONS
+@@ -92,15 +93,16 @@ class Hub(BaseHub):
+         # polled for. It prevents one handler from invalidating
+         # another.
+         callbacks = set()
++        noop = hub.noop  # shave getattr
+         for fileno, event in presult:
+-            if event & READ_MASK:
++            if event & self.READ_MASK:
+                 callbacks.add((readers.get(fileno, noop), fileno))
+-            if event & WRITE_MASK:
++            if event & self.WRITE_MASK:
+                 callbacks.add((writers.get(fileno, noop), fileno))
+             if event & select.POLLNVAL:
+                 self.remove_descriptor(fileno)
+                 continue
+-            if event & EXC_MASK:
++            if event & self.EXC_MASK:
+                 callbacks.add((readers.get(fileno, noop), fileno))
+                 callbacks.add((writers.get(fileno, noop), fileno))
+ 
+@@ -111,7 +113,7 @@ class Hub(BaseHub):
+                 raise
+             except:
+                 self.squelch_exception(fileno, sys.exc_info())
+-                clear_sys_exc_info()
++                support.clear_sys_exc_info()
+ 
+         if self.debug_blocking:
+             self.block_detect_post()
+diff --git a/eventlet/hubs/pyevent.py b/eventlet/hubs/pyevent.py
+index 73c0a18..8367a65 100644
+--- a/eventlet/hubs/pyevent.py
++++ b/eventlet/hubs/pyevent.py
+@@ -1,12 +1,20 @@
+ import sys
+ import traceback
+-import event
+ import types
+ 
+ from eventlet.support import greenlets as greenlet
+ import six
+ from eventlet.hubs.hub import BaseHub, READ, WRITE
+ 
++try:
++    import event
++except ImportError:
++    event = None
++
++
++def is_available():
++    return event is not None
++
+ 
+ class event_wrapper(object):
+ 
+diff --git a/eventlet/hubs/selects.py b/eventlet/hubs/selects.py
+index 3f04e1a..0ead5b8 100644
+--- a/eventlet/hubs/selects.py
++++ b/eventlet/hubs/selects.py
+@@ -1,60 +1,64 @@
+ import errno
+ import sys
+-from eventlet import patcher
+-from eventlet.support import get_errno, clear_sys_exc_info
++from eventlet import patcher, support
++from eventlet.hubs import hub
+ select = patcher.original('select')
+ time = patcher.original('time')
+ 
+-from eventlet.hubs.hub import BaseHub, READ, WRITE, noop
+-
+ try:
+     BAD_SOCK = set((errno.EBADF, errno.WSAENOTSOCK))
+ except AttributeError:
+     BAD_SOCK = set((errno.EBADF,))
+ 
+ 
+-class Hub(BaseHub):
++def is_available():
++    return hasattr(select, 'select')
++
++
++class Hub(hub.BaseHub):
+     def _remove_bad_fds(self):
+         """ Iterate through fds, removing the ones that are bad per the
+         operating system.
+         """
+-        all_fds = list(self.listeners[READ]) + list(self.listeners[WRITE])
++        all_fds = list(self.listeners[self.READ]) + list(self.listeners[self.WRITE])
+         for fd in all_fds:
+             try:
+                 select.select([fd], [], [], 0)
+             except select.error as e:
+-                if get_errno(e) in BAD_SOCK:
++                if support.get_errno(e) in BAD_SOCK:
+                     self.remove_descriptor(fd)
+ 
+     def wait(self, seconds=None):
+-        readers = self.listeners[READ]
+-        writers = self.listeners[WRITE]
++        readers = self.listeners[self.READ]
++        writers = self.listeners[self.WRITE]
+         if not readers and not writers:
+             if seconds:
+                 time.sleep(seconds)
+             return
+-        all_fds = list(readers) + list(writers)
++        reader_fds = list(readers)
++        writer_fds = list(writers)
++        all_fds = reader_fds + writer_fds
+         try:
+-            r, w, er = select.select(readers.keys(), writers.keys(), all_fds, seconds)
++            r, w, er = select.select(reader_fds, writer_fds, all_fds, seconds)
+         except select.error as e:
+-            if get_errno(e) == errno.EINTR:
++            if support.get_errno(e) == errno.EINTR:
+                 return
+-            elif get_errno(e) in BAD_SOCK:
++            elif support.get_errno(e) in BAD_SOCK:
+                 self._remove_bad_fds()
+                 return
+             else:
+                 raise
+ 
+         for fileno in er:
+-            readers.get(fileno, noop).cb(fileno)
+-            writers.get(fileno, noop).cb(fileno)
++            readers.get(fileno, hub.noop).cb(fileno)
++            writers.get(fileno, hub.noop).cb(fileno)
+ 
+         for listeners, events in ((readers, r), (writers, w)):
+             for fileno in events:
+                 try:
+-                    listeners.get(fileno, noop).cb(fileno)
++                    listeners.get(fileno, hub.noop).cb(fileno)
+                 except self.SYSTEM_EXCEPTIONS:
+                     raise
+                 except:
+                     self.squelch_exception(fileno, sys.exc_info())
+-                    clear_sys_exc_info()
++                    support.clear_sys_exc_info()
+diff --git a/eventlet/hubs/timer.py b/eventlet/hubs/timer.py
+index 9b10b00..1dfd561 100644
+--- a/eventlet/hubs/timer.py
++++ b/eventlet/hubs/timer.py
+@@ -1,8 +1,8 @@
+ import traceback
+ 
++import eventlet.hubs
+ from eventlet.support import greenlets as greenlet
+ import six
+-from eventlet.hubs import get_hub
+ 
+ """ If true, captures a stack trace for each timer when constructed.  This is
+ useful for debugging leaking timers, to find out where the timer was set up. """
+@@ -48,7 +48,7 @@ class Timer(object):
+         """Schedule this timer to run in the current runloop.
+         """
+         self.called = False
+-        self.scheduled_time = get_hub().add_timer(self)
++        self.scheduled_time = eventlet.hubs.get_hub().add_timer(self)
+         return self
+ 
+     def __call__(self, *args):
+@@ -69,7 +69,7 @@ class Timer(object):
+         """
+         if not self.called:
+             self.called = True
+-            get_hub().timer_canceled(self)
++            eventlet.hubs.get_hub().timer_canceled(self)
+             try:
+                 del self.tpl
+             except AttributeError:
+diff --git a/tests/hub_test.py b/tests/hub_test.py
+index 61b5b0b..d62b805 100644
+--- a/tests/hub_test.py
++++ b/tests/hub_test.py
+@@ -4,7 +4,6 @@ import time
+ 
+ import tests
+ from tests import skip_with_pyevent, skip_if_no_itimer, skip_unless
+-from tests.patcher_test import ProcessBase
+ import eventlet
+ from eventlet import hubs
+ from eventlet.support import greenlets
+@@ -205,17 +204,6 @@ class TestExceptionInGreenthread(tests.LimitedTestCase):
+             g.kill()
+ 
+ 
+-class TestHubSelection(tests.LimitedTestCase):
+-
+-    def test_explicit_hub(self):
+-        oldhub = hubs.get_hub()
+-        try:
+-            hubs.use_hub(Foo)
+-            assert isinstance(hubs.get_hub(), Foo), hubs.get_hub()
+-        finally:
+-            hubs._threadlocal.hub = oldhub
+-
+-
+ class TestHubBlockingDetector(tests.LimitedTestCase):
+     TEST_TIMEOUT = 10
+ 
+@@ -361,43 +349,11 @@ class TestDeadRunLoop(tests.LimitedTestCase):
+         assert g.dead  # sanity check that dummyproc has completed
+ 
+ 
+-class Foo(object):
+-    pass
+-
+-
+-class TestDefaultHub(ProcessBase):
+-
+-    def test_kqueue_unsupported(self):
+-        # https://github.com/eventlet/eventlet/issues/38
+-        # get_hub on windows broken by kqueue
+-        module_source = r'''
+-from __future__ import print_function
+-
+-# Simulate absence of kqueue even on platforms that support it.
+-import select
+-try:
+-    del select.kqueue
+-except AttributeError:
+-    pass
+-
+-from six.moves import builtins
+-
+-original_import = builtins.__import__
+-
+-def fail_import(name, *args, **kwargs):
+-    if 'epoll' in name:
+-        raise ImportError('disabled for test')
+-    if 'kqueue' in name:
+-        print('kqueue tried')
+-    return original_import(name, *args, **kwargs)
+-
+-builtins.__import__ = fail_import
++def test_use_hub_class():
++    tests.run_isolated('hub_use_hub_class.py')
+ 
+ 
+-import eventlet.hubs
+-eventlet.hubs.get_default_hub()
+-print('ok')
+-'''
+-        self.write_to_tempfile('newmod', module_source)
+-        output, _ = self.launch_subprocess('newmod.py')
+-        self.assertEqual(output, 'kqueue tried\nok\n')
++def test_kqueue_unsupported():
++    # https://github.com/eventlet/eventlet/issues/38
++    # get_hub on windows broken by kqueue
++    tests.run_isolated('hub_kqueue_unsupported.py')
+diff --git a/tests/isolated/hub_kqueue_unsupported.py b/tests/isolated/hub_kqueue_unsupported.py
+new file mode 100644
+index 0000000..373df98
+--- /dev/null
++++ b/tests/isolated/hub_kqueue_unsupported.py
+@@ -0,0 +1,28 @@
++from __future__ import print_function
++__test__ = False
++
++
++def delattr_silent(x, name):
++    try:
++        delattr(x, name)
++    except AttributeError:
++        pass
++
++
++if __name__ == '__main__':
++    # Simulate absence of kqueue even on platforms that support it.
++    import select
++    delattr_silent(select, 'kqueue')
++    delattr_silent(select, 'KQ_FILTER_READ')
++    # patcher.original used in hub may reimport and return deleted kqueue attribute
++    import eventlet.patcher
++    select_original = eventlet.patcher.original('select')
++    delattr_silent(select_original, 'kqueue')
++    delattr_silent(select_original, 'KQ_FILTER_READ')
++
++    import eventlet.hubs
++    default = eventlet.hubs.get_default_hub()
++    assert not default.__name__.endswith('kqueue')
++    import eventlet.hubs.kqueue
++    assert not eventlet.hubs.kqueue.is_available()
++    print('pass')
+diff --git a/tests/isolated/hub_use_hub_class.py b/tests/isolated/hub_use_hub_class.py
+new file mode 100644
+index 0000000..9f7f308
+--- /dev/null
++++ b/tests/isolated/hub_use_hub_class.py
+@@ -0,0 +1,13 @@
++from __future__ import print_function
++__test__ = False
++
++
++class Foo(object):
++    pass
++
++if __name__ == '__main__':
++    import eventlet.hubs
++    eventlet.hubs.use_hub(Foo)
++    hub = eventlet.hubs.get_hub()
++    assert isinstance(hub, Foo), repr(hub)
++    print('pass')
+-- 
+2.19.1
+
