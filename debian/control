@@ -43,11 +43,11 @@ Package: python-eventlet
 Architecture: all
 Depends:
  netbase,
- python-dnspython,
+ python-dnspython (>= 1.15.0),
  python-enum34,
- python-greenlet,
- python-monotonic,
- python-six,
+ python-greenlet (>= 0.3),
+ python-monotonic (>= 1.4),
+ python-six (>= 1.10.0),
  ${misc:Depends},
  ${python:Depends},
 Suggests:
@@ -92,10 +92,10 @@ Package: python3-eventlet
 Architecture: all
 Depends:
  netbase,
- python3-dnspython,
- python3-greenlet,
- python3-monotonic,
- python3-six,
+ python3-dnspython (>= 1.15.0),
+ python3-greenlet (>= 0.3),
+ python3-monotonic (>= 1.4),
+ python3-six (>= 1.10.0),
  ${misc:Depends},
  ${python3:Depends},
  ${sphinxdoc:Depends},

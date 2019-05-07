@@ -1,3 +1,9 @@
+python-eventlet (0.24.1-2) unstable; urgency=medium
+
+  * Add explicit versions for python dependencies.
+
+ -- Brad Cowie <brad@faucet.nz>  Tue, 07 May 2019 17:11:24 +1200
+
 python-eventlet (0.24.1-1) unstable; urgency=medium
 
   * New upstream release.
