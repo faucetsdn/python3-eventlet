@@ -1,0 +1,43 @@
+From 0609b79275ad55e05c2a7dd6d167b1b97b605f52 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ond=C5=99ej=20Nov=C3=BD?= <onovy@debian.org>
+Date: Thu, 10 May 2018 20:26:59 +0200
+Subject: ssl: RecursionError on Python3.6+
+
+Origin: https://github.com/eventlet/eventlet/commit/de06878e5a295bfbbddca0048c3453d16168a676
+---
+ eventlet/green/ssl.py                       | 20 ++++++++++++++++++++
+ tests/isolated/green_ssl_py36_properties.py | 16 ++++++++++++++++
+ 2 files changed, 36 insertions(+)
+ create mode 100644 tests/isolated/green_ssl_py36_properties.py
+
+Index: python-eventlet/eventlet/green/ssl.py
+===================================================================
+--- python-eventlet.orig/eventlet/green/ssl.py
++++ python-eventlet/eventlet/green/ssl.py
+@@ -457,6 +457,26 @@ if hasattr(__ssl, 'SSLContext'):
+             def verify_mode(self, value):
+                 super(_original_sslcontext, _original_sslcontext).verify_mode.__set__(self, value)
+ 
++        # https://github.com/eventlet/eventlet/issues/371
++        # Thanks to Gevent developers for sharing patch to this problem.
++        if hasattr(_original_sslcontext.options, 'setter'):
++            # In 3.6, these became properties. They want to access the
++            # property __set__ method in the superclass, and they do so by using
++            # super(SSLContext, SSLContext). But we rebind SSLContext when we monkey
++            # patch, which causes infinite recursion.
++            # https://github.com/python/cpython/commit/328067c468f82e4ec1b5c510a4e84509e010f296
++            @_original_sslcontext.options.setter
++            def options(self, value):
++                super(_original_sslcontext, _original_sslcontext).options.__set__(self, value)
++
++            @_original_sslcontext.verify_flags.setter
++            def verify_flags(self, value):
++                super(_original_sslcontext, _original_sslcontext).verify_flags.__set__(self, value)
++
++            @_original_sslcontext.verify_mode.setter
++            def verify_mode(self, value):
++                super(_original_sslcontext, _original_sslcontext).verify_mode.__set__(self, value)
++
+     SSLContext = GreenSSLContext
+ 
+     if hasattr(__ssl, 'create_default_context'):

@@ -1,0 +1,26 @@
+From b51e359bd18a8f625c50becd55fa455c183c6f94 Mon Sep 17 00:00:00 2001
+From: Thomas Goirand <zigo@debian.org>
+Date: Fri, 4 Aug 2017 21:47:20 +0200
+Subject: Removed failing test
+
+ This test fails in Sid.
+Forwarded: no
+Last-Update: 2016-10-07
+---
+ tests/patcher_test.py | 22 ----------------------
+ 1 file changed, 22 deletions(-)
+
+Index: python-eventlet/tests/patcher_test.py
+===================================================================
+--- python-eventlet.orig/tests/patcher_test.py
++++ python-eventlet/tests/patcher_test.py
+@@ -83,9 +83,6 @@ class ImportPatched(ProcessBase):
+         assert 'eventlet.green.httplib' not in lines[2], repr(output)
+ 
+ 
+-def test_import_patched_defaults():
+-    tests.run_isolated('patcher_import_patched_defaults.py')
+-
+ 
+ def test_import_patched_handles_sub_modules():
+     tests.run_isolated('test_sub_module_in_import_patched/test.py')

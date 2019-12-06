@@ -18,11 +18,9 @@ Last-Update: 2016-07-19
  tests/socket_test.py  |  7 -------
  2 files changed, 27 deletions(-)
 
-diff --git a/tests/greenio_test.py b/tests/greenio_test.py
-index 619ccd0..4e0069d 100644
 --- a/tests/greenio_test.py
 +++ b/tests/greenio_test.py
-@@ -74,18 +74,6 @@ class TestGreenSocket(tests.LimitedTestCase):
+@@ -75,18 +75,6 @@
              # 3.x io write to closed file-like pbject raises ValueError
              self.assertRaises(ValueError, fd.write, b'a')
  
@@ -41,7 +39,7 @@ index 619ccd0..4e0069d 100644
      def test_accept_timeout(self):
          s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
          s.bind(('', 0))
-@@ -95,14 +83,6 @@ class TestGreenSocket(tests.LimitedTestCase):
+@@ -96,14 +84,6 @@
          gs = greenio.GreenSocket(s)
          expect_socket_timeout(gs.accept)
  
@@ -56,11 +54,9 @@ index 619ccd0..4e0069d 100644
      def test_recv_timeout(self):
          listener = greenio.GreenSocket(socket.socket())
          listener.bind(('', 0))
-diff --git a/tests/socket_test.py b/tests/socket_test.py
-index 954eba3..241ce83 100644
 --- a/tests/socket_test.py
 +++ b/tests/socket_test.py
-@@ -9,13 +9,6 @@ from eventlet.support import greendns
+@@ -9,13 +9,6 @@
  import tests
  
  

@@ -1,0 +1,39 @@
+From 5e175af19f461e57c402e8ecd76ced4dad5e75ef Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ond=C5=99ej=20Nov=C3=BD?= <ondrej.novy@firma.seznam.cz>
+Date: Wed, 10 Jul 2019 16:03:22 +0200
+Subject: [PATCH] Use _imp instead of deprecated imp
+Origin: https://github.com/eventlet/eventlet/pull/582
+
+Module imp is deprecated in favour of importlib. But importlib doesn't
+support acquire_lock/release_lock/lock_held. Use internal _imp module
+instead.
+---
+ eventlet/patcher.py | 10 +++++-----
+ eventlet/tpool.py   |  4 ++--
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+--- a/eventlet/patcher.py
++++ b/eventlet/patcher.py
+@@ -1,4 +1,7 @@
+-import imp
++try:
++    import _imp as imp
++except ImportError:
++    import imp
+ import sys
+ 
+ import eventlet
+--- a/eventlet/tpool.py
++++ b/eventlet/tpool.py
+@@ -14,7 +14,10 @@
+ # limitations under the License.
+ 
+ import atexit
+-import imp
++try:
++    import _imp as imp
++except ImportError:
++    import imp
+ import os
+ import sys
+ import traceback

@@ -1,49 +1,57 @@
+python-eventlet (0.25.1-2) unstable; urgency=medium
+
+  * Bump Standards-Version to 4.4.1.
+  * Uploading to unstable.
+
+ -- Ondřej Nový <onovy@debian.org>  Fri, 18 Oct 2019 15:56:59 +0200
+
+python-eventlet (0.25.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Refresh patches.
+  * Removed patches applied upstream:
+    - 0013-New_test_crt.patch
+    - 0014-Fix-for-Python-3.7.patch
+    - 0015-more-python3.7-fixes.patch
+  * Set export NOSE_PROCESSES=-1 to do parallel testing.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 11 Sep 2019 17:39:29 +0200
+
 python-eventlet (0.24.1-2) unstable; urgency=medium
 
-  * Add explicit versions for python dependencies.
+  * Uploading to unstable
 
- -- Brad Cowie <brad@faucet.nz>  Tue, 07 May 2019 17:11:24 +1200
+ -- Ondřej Nový <onovy@debian.org>  Tue, 16 Jul 2019 20:16:04 +0200
 
-python-eventlet (0.24.1-1) unstable; urgency=medium
+python-eventlet (0.24.1-1) experimental; urgency=medium
 
-  * New upstream release.
+  * New upstream release
+  * Bump debhelper compat level to 12 and use debhelper-compat
+  * Standards version is 4.4.0 now (no changes)
+  * d/copyright: Bump my copyright year.
+  * d/patches:
+    - 0007-Patched-test_getaddrinfo-due-netbase-update.patch:
+       Drop, applied upstream
+    - 0011-Avoid-dependency-on-enum-compat.patch:
+       Drop, applied upstream
+    - Use _imp instead of deprecated imp
+    - Rebased others
+  * Add python3-monotonic and python3-six to B-D
+  * Drop Python 2 support, because required version of
+    python-monotonic doesn't exists
 
- -- Brad Cowie <brad@faucet.nz>  Tue, 30 Apr 2019 16:02:24 +1200
+ -- Ondřej Nový <onovy@debian.org>  Wed, 10 Jul 2019 16:31:13 +0200
 
-python-eventlet (0.24.1-0ubuntu3) disco; urgency=medium
+python-eventlet (0.20.0-6) unstable; urgency=medium
 
-  * d/p/0016-*.patch: Replace patch with proper fix cherry-picked from
-    upstream master branch (LP: #1809033).
+  [ Ondřej Nový ]
+  * Set TRAVIS env to better handle timing tests
 
- -- Corey Bryant <corey.bryant@canonical.com>  Fri, 21 Dec 2018 09:16:24 -0500
+  [ Thomas Goirand ]
+  * Team upload with agreement from Ondřej Nový.
+  * Add 0015-more-python3.7-fixes.patch.
 
-python-eventlet (0.24.1-0ubuntu2) disco; urgency=medium
-
-  * d/p/0016-endheaders-py27-work-around.patch: Patch the endheaders
-    method definition to drop the "*" parameter for now as it is not
-    valid for Python 2.7 (LP: #1809033).
-
- -- Corey Bryant <corey.bryant@canonical.com>  Tue, 18 Dec 2018 14:58:36 -0500
-
-python-eventlet (0.24.1-0ubuntu1) disco; urgency=medium
-
-  * d/gbp.conf: Update gbp configuration file.
-  * d/control: Update Vcs-* links and maintainers.
-  * New upstream release.
-  * d/control: Align (Build-)Depends with upstream.
-  * d/p/0003-Allow-more-busy-CPU.patch,
-    d/p/0009-Removed-test_urllib-that-is-failing-in-py36.patch,
-    d/p/0014-Fix-for-Python-3.7.patch: Rebased.
-  * d/p/0007-Patched-test_getaddrinfo-due-netbase-update.patch,
-    d/p/0008-Disable-test_server_connection_timeout_exception.patch,
-    d/p/0012-ssl-RecursionError-on-Python3.6.patch: Dropped. Fixed in new
-    upstream release.
-  * d/p/0005-Removed-failing-test.patch,
-    d/p/0011-Avoid-dependency-on-enum-compat.patch: Dropped. No longer needed.
-  * d/p/0015-IMPORTANT-late-import-in-use_hub-thread-race-caused-.patch:
-    Cherry-picked from upstream master branch.
-
- -- Corey Bryant <corey.bryant@canonical.com>  Mon, 17 Dec 2018 08:38:17 -0500
+ -- Thomas Goirand <zigo@debian.org>  Tue, 22 Jan 2019 17:06:21 +0100
 
 python-eventlet (0.20.0-5) unstable; urgency=medium
 

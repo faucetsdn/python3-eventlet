@@ -8,11 +8,11 @@ Subject: Fix compilation errors when installing package in Python 2.7
  eventlet/green/http/cookiejar.py |  3 ++-
  2 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/eventlet/green/http/client.py b/eventlet/green/http/client.py
-index c7d3bda..8d5bcad 100644
---- a/eventlet/green/http/client.py
-+++ b/eventlet/green/http/client.py
-@@ -121,6 +121,7 @@ Unread-response                _CS_IDLE           <response_class>
+Index: python-eventlet/eventlet/green/http/client.py
+===================================================================
+--- python-eventlet.orig/eventlet/green/http/client.py
++++ python-eventlet/eventlet/green/http/client.py
+@@ -121,6 +121,7 @@ Unread-response                _CS_IDLE
  Req-started-unread-response    _CS_REQ_STARTED    <response_class>
  Req-sent-unread-response       _CS_REQ_SENT       <response_class>
  """
@@ -50,7 +50,7 @@ index c7d3bda..8d5bcad 100644
  
  
  class HTTPMessage(email.message.Message):
-@@ -1330,7 +1333,7 @@ else:
+@@ -1456,7 +1459,7 @@ else:
  
          def __init__(self, host, port=None, key_file=None, cert_file=None,
                       timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
@@ -59,10 +59,10 @@ index c7d3bda..8d5bcad 100644
                       check_hostname=None):
              super(HTTPSConnection, self).__init__(host, port, timeout,
                                                    source_address)
-diff --git a/eventlet/green/http/cookiejar.py b/eventlet/green/http/cookiejar.py
-index 9c884e9..658faba 100644
---- a/eventlet/green/http/cookiejar.py
-+++ b/eventlet/green/http/cookiejar.py
+Index: python-eventlet/eventlet/green/http/cookiejar.py
+===================================================================
+--- python-eventlet.orig/eventlet/green/http/cookiejar.py
++++ python-eventlet/eventlet/green/http/cookiejar.py
 @@ -1266,7 +1266,8 @@ def deepvalues(mapping):
              pass
          else:
