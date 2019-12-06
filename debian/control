@@ -6,7 +6,7 @@ Uploaders:
  Thomas Goirand <zigo@debian.org>,
  Ondřej Nový <onovy@debian.org>,
 Build-Depends:
- debhelper-compat (= 12),
+ debhelper (>= 11),
  dh-python,
  netbase,
  python3-all,
