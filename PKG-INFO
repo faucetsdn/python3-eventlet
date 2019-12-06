@@ -1,12 +1,11 @@
 Metadata-Version: 1.1
 Name: eventlet
-Version: 0.24.1
+Version: 0.25.1
 Summary: Highly concurrent networking library
 Home-page: http://eventlet.net
 Author: Linden Lab
 Author-email: eventletdev@lists.secondlife.com
 License: UNKNOWN
-Description-Content-Type: UNKNOWN
 Description: Eventlet is a concurrent networking library for Python that allows you to change how you run your code, not how you write it.
         
         It uses epoll or libevent for highly scalable non-blocking I/O.  Coroutines ensure that the developer uses a blocking style of programming that is similar to threading, but provide the benefits of non-blocking I/O.  The event dispatch is implicit, which means you can easily use Eventlet from the Python interpreter, or as a small part of a larger application.
@@ -94,6 +93,7 @@ Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.4
 Classifier: Programming Language :: Python :: 3.5
 Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python
 Classifier: Topic :: Internet
 Classifier: Topic :: Software Development :: Libraries :: Python Modules

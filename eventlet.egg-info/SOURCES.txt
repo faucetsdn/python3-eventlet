@@ -5,9 +5,6 @@ NEWS
 README.rst
 setup.cfg
 setup.py
-benchmarks/__init__.py
-benchmarks/localhost_socket.py
-benchmarks/spawn.py
 doc/Makefile
 doc/authors.rst
 doc/basic_usage.rst
@@ -176,6 +173,7 @@ tests/mock.py
 tests/mysqldb_test.py
 tests/nosewrapper.py
 tests/openssl_test.py
+tests/os_test.py
 tests/parse_results.py
 tests/patcher_psycopg_test.py
 tests/patcher_test.py
@@ -212,6 +210,8 @@ tests/isolated/greendns_import_rdtypes_then_eventlet.py
 tests/isolated/greenio_double_close_219.py
 tests/isolated/hub_fork.py
 tests/isolated/hub_fork_simple.py
+tests/isolated/hub_kqueue_unsupported.py
+tests/isolated/hub_use_hub_class.py
 tests/isolated/mysqldb_monkey_patch.py
 tests/isolated/patcher_blocking_select_methods_are_deleted.py
 tests/isolated/patcher_existing_locks_early.py
@@ -231,6 +231,10 @@ tests/isolated/subprocess_patched_communicate.py
 tests/isolated/tpool_exception_leak.py
 tests/isolated/tpool_isolate_socket_default_timeout.py
 tests/isolated/wsgi_connection_timeout.py
+tests/isolated/test_sub_module_in_import_patched/__init__.py
+tests/isolated/test_sub_module_in_import_patched/test.py
+tests/isolated/test_sub_module_in_import_patched/sample_main_module/__init__.py
+tests/isolated/test_sub_module_in_import_patched/sample_main_module/sample_sub_module/__init__.py
 tests/manual/__init__.py
 tests/manual/greenio_memtest.py
 tests/manual/regress-226-unpatched-ssl.py
