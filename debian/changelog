@@ -1,3 +1,126 @@
+python-eventlet (0.30.2-4) unstable; urgency=medium
+
+  * Add upstream Python 3.10 patches.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 12 Nov 2021 09:51:40 +0100
+
+python-eventlet (0.30.2-3) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Bump debhelper from old 12 to 13.
+  * Update standards version to 4.5.1, no changes needed.
+
+  [ Filippo Giunchedi ]
+  * Refresh Replace-dnspython-_compute_expiration-by-_compute_times.patch with
+    upstrem commit 51569f34767
+  * Add patches for dnspython2 compat. (Closes #989600)
+    - Check_compute_expiration_at_module_level.patch
+    - add_handling_for_new_dnspython_arguments.patch
+
+  [ Thomas Goirand ]
+  * Fix greendns.py hack when building the sphinx doc.
+
+ -- Thomas Goirand <zigo@debian.org>  Sun, 26 Sep 2021 18:35:28 +0200
+
+python-eventlet (0.30.2-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 16 Aug 2021 12:36:09 +0200
+
+python-eventlet (0.30.2-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Removed patches applied upstream:
+    - 0017-py39-Add-_at_fork_reinit-method-to-Semaphores.patch
+    - 0018-pyopenssl-tsafe-module-was-deprecated-and-removed-in.patch
+    - fix-infinte-recursion-in-ssl.patch
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 08 Mar 2021 11:20:37 +0100
+
+python-eventlet (0.26.1-7) unstable; urgency=medium
+
+  * CVE-2021-21419: Malicious peer may exhaust memory on Eventlet side
+    by sending highly compressed data frame. Appled upstream patch: websocket:
+    Limit maximum uncompressed frame length to 8MiB (Closes: #988342).
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 11 May 2021 08:03:43 +0200
+
+python-eventlet (0.26.1-6) unstable; urgency=medium
+
+  * Hack a modified debian/greendns.py with filename=None instead of
+    filename='/etc/resolv.conf' to replace eventlet/support/greendns.py when
+    building the sphinx doc, to avoid crash (Closes: #981720).
+    Beware that future version of Eventlet will need updated files in the
+    debian folder.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 18 Feb 2021 17:07:30 +0100
+
+python-eventlet (0.26.1-5) unstable; urgency=medium
+
+  * Drop 0012-ssl-RecursionError-on-Python3.6.patch, which is destroying SSL
+    since it got fixed upstream.
+  * Drop 0010-Fix-compilation-errors-when-installing-package-in-Py.patch, as
+    we don't support Python 2.7 anymore.
+  * Add fix-infinte-recursion-in-ssl.patch, which should fix the compat with
+    dnspython 2.x.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 28 Jan 2021 12:26:06 +0100
+
+python-eventlet (0.26.1-4) unstable; urgency=medium
+
+  * Team upload
+  * Import upstream patch to fix Semaphore objects on python3.9
+  * Import upstream patch to fix build against pyOpenSSL >= 20 (Closes: #980639)
+  * autopkgtest: run test suite
+  * debian/rules: skip running the test suite during the build. It fails
+    randomly, but that's only during the build: under autopkgtest, they
+    succeed consistely.
+
+ -- Antonio Terceiro <terceiro@debian.org>  Thu, 21 Jan 2021 09:34:22 -0300
+
+python-eventlet (0.26.1-3) unstable; urgency=medium
+
+  * Add remove-non-deterministic-test_communicate_with_poll.patch.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 14 Oct 2020 09:37:19 +0200
+
+python-eventlet (0.26.1-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 13 Oct 2020 14:28:24 +0200
+
+python-eventlet (0.26.1-1) experimental; urgency=medium
+
+  [ Debian Janitor ]
+  * Use secure URI in Homepage field.
+  * Remove obsolete field Name from debian/upstream/metadata (already
+    present in machine-readable debian/copyright).
+
+  [ Ondřej Nový ]
+  * New upstream release.
+  * d/copyright: Bump my copyright year.
+  * d/control: Update Maintainer field with new Debian Python Team
+    contact address.
+  * d/control: Update Vcs-* fields with new Debian Python Team Salsa
+    layout.
+  * d/patches: Rebase.
+
+  [ Thomas Goirand ]
+  * Add Replace-dnspython-_compute_expiration-by-_compute_times.patch.
+  * Add fix-test_noraise_dns_tcp.patch.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 28 Sep 2020 17:29:05 +0200
+
+python-eventlet (0.25.2-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #954499).
+  * Add Rules-Requires-Root: no.
+  * Bump Standards-Version to 4.5.0.
+
+ -- Ondřej Nový <onovy@debian.org>  Tue, 21 Apr 2020 10:57:30 +0200
+
 python-eventlet (0.25.1-2) unstable; urgency=medium
 
   * Bump Standards-Version to 4.4.1.

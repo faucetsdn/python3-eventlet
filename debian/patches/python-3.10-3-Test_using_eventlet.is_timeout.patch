@@ -1,0 +1,23 @@
+Description: Test using eventlet.is_timeout
+ ...rather than requiring an is_timeout attribute on errors.
+ .
+ TimeoutErrors (which are covered by is_timeout) can't necessarily have
+ attributes added to them.
+Author: Tim Burke <tim.burke@gmail.com>
+Date: Fri, 11 Jun 2021 13:02:52 -0700
+Origin: https://github.com/eventlet/eventlet/pull/715/commits/5641a81d5f7d588c2d452c36479391c71b012e8a
+Last-Update: 2021-11-12
+
+diff --git a/tests/__init__.py b/tests/__init__.py
+index c0b64fd9e..188366774 100644
+--- a/tests/__init__.py
++++ b/tests/__init__.py
+@@ -383,7 +383,7 @@ def run_isolated(path, prefix='tests/isolated/', **kwargs):
+ 
+ def check_is_timeout(obj):
+     value_text = getattr(obj, 'is_timeout', '(missing)')
+-    assert obj.is_timeout, 'type={0} str={1} .is_timeout={2}'.format(type(obj), str(obj), value_text)
++    assert eventlet.is_timeout(obj), 'type={0} str={1} .is_timeout={2}'.format(type(obj), str(obj), value_text)
+ 
+ 
+ @contextlib.contextmanager

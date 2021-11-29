@@ -1,12 +1,12 @@
 Source: python-eventlet
 Section: python
 Priority: optional
-Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Maintainer: Debian Python Team <team+python@tracker.debian.org>
 Uploaders:
  Thomas Goirand <zigo@debian.org>,
  Ondřej Nový <onovy@debian.org>,
 Build-Depends:
- debhelper (>= 11),
+ debhelper-compat (= 13),
  dh-python,
  netbase,
  python3-all,
@@ -21,10 +21,11 @@ Build-Depends-Indep:
  python3-openssl,
  python3-six,
  python3-zmq,
-Standards-Version: 4.4.1
-Vcs-Browser: https://salsa.debian.org/python-team/modules/python-eventlet
-Vcs-Git: https://salsa.debian.org/python-team/modules/python-eventlet.git
-Homepage: http://eventlet.net
+Standards-Version: 4.5.1
+Vcs-Browser: https://salsa.debian.org/python-team/packages/python-eventlet
+Vcs-Git: https://salsa.debian.org/python-team/packages/python-eventlet.git
+Homepage: https://eventlet.net
+Rules-Requires-Root: no
 
 Package: python-eventlet-doc
 Architecture: all

@@ -1,2 +1,14 @@
 Tests: listen3
 Depends: python3-eventlet,
+
+Test-Command: set -u; cp -r tests ${AUTOPKGTEST_TMP} && cd ${AUTOPKGTEST_TMP} && python3 -m nose -v 2>&1
+Depends: @,
+ python3-dnspython,
+ python3-greenlet,
+ python3-httplib2,
+ python3-monotonic (>= 1.4),
+ python3-nose,
+ python3-openssl,
+ python3-six,
+ python3-zmq,
+Features: test-name=testsuite
