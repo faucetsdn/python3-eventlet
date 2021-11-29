@@ -1,0 +1,29 @@
+Description: Only wrap socket.timeout on Python < 3.10
+ On py310, socket.timeout is TimeoutError, which our is_timeout() helper
+ func already knows is a timeout.
+ .
+ Note that this doesn't get us to py310 support (not by a long shot), but
+ it's a step along the way.
+ .
+Author: Tim Burke <tim.burke@gmail.com>
+Date: Wed, 9 Jun 2021 14:40:13 -0700
+Closes: #687
+Origin: https://github.com/eventlet/eventlet/pull/715/commits/3fde87d6af97551ce9e18ad8835947153530e121
+Last-Update: 2021-11-12
+
+diff --git a/eventlet/greenio/base.py b/eventlet/greenio/base.py
+index 2eed86966..51a7ae13e 100644
+--- a/eventlet/greenio/base.py
++++ b/eventlet/greenio/base.py
+@@ -29,7 +29,10 @@
+ _original_socket = eventlet.patcher.original('socket').socket
+ 
+ 
+-socket_timeout = eventlet.timeout.wrap_is_timeout(socket.timeout)
++if sys.version_info >= (3, 10):
++    socket_timeout = socket.timeout  # Really, TimeoutError
++else:
++    socket_timeout = eventlet.timeout.wrap_is_timeout(socket.timeout)
+ 
+ 
+ def socket_connect(descriptor, address):

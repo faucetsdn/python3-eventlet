@@ -1,0 +1,30 @@
+Description: check _compute_expiration at module level
+Author: Felix Yan <felixonmars@archlinux.org>
+Date: Tue, 17 Aug 2021 00:46:49 +0800
+Origin: https://github.com/eventlet/eventlet/pull/722/commits/ecd55ad127ea630e45b630e45c53146bc064a65c
+
+---
+ eventlet/support/greendns.py | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/eventlet/support/greendns.py b/eventlet/support/greendns.py
+index b95790c3e..ab98e5882 100644
+--- a/eventlet/support/greendns.py
++++ b/eventlet/support/greendns.py
+@@ -120,12 +120,13 @@ def is_ip_addr(host):
+     return is_ipv4_addr(host) or is_ipv6_addr(host)
+
+
+-def compute_expiration(query, timeout):
+-    # NOTE(ralonsoh): in dnspython v2.0.0, "_compute_expiration" was replaced
+-    # by "_compute_times".
+-    if hasattr(query, '_compute_expiration'):
++# NOTE(ralonsoh): in dnspython v2.0.0, "_compute_expiration" was replaced
++# by "_compute_times".
++if hasattr(dns.query, '_compute_expiration'):
++    def compute_expiration(query, timeout):
+         return query._compute_expiration(timeout)
+-    else:
++else:
++    def compute_expiration(query, timeout):
+         return query._compute_times(timeout)[1]

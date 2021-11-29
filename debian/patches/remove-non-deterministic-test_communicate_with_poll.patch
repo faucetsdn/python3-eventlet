@@ -1,0 +1,36 @@
+Description: Remove non-deterministic test_communicate_with_poll()
+ This patch fails sometimes, which isn't acceptable in Debian, so I'm
+ removing it to avoid issues.
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2020-10-14
+
+--- python-eventlet-0.26.1.orig/tests/subprocess_test.py
++++ python-eventlet-0.26.1/tests/subprocess_test.py
+@@ -29,26 +29,6 @@ def test_subprocess_wait():
+     assert 0.1 <= tdiff <= 0.2, 'did not stop within allowed time'
+ 
+ 
+-def test_communicate_with_poll():
+-    # This test was being skipped since git 25812fca8, I don't there's
+-    # a need to do this. The original comment:
+-    #
+-    # https://github.com/eventlet/eventlet/pull/24
+-    # `eventlet.green.subprocess.Popen.communicate()` was broken
+-    # in Python 2.7 because the usage of the `select` module was moved from
+-    # `_communicate` into two other methods `_communicate_with_select`
+-    # and `_communicate_with_poll`. Link to 2.7's implementation:
+-    # http://hg.python.org/cpython/file/2145593d108d/Lib/subprocess.py#l1255
+-
+-    p = subprocess.Popen(
+-        [sys.executable, '-c', 'import time; time.sleep(0.5)'],
+-        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+-    t1 = time.time()
+-    eventlet.with_timeout(0.1, p.communicate, timeout_value=True)
+-    tdiff = time.time() - t1
+-    assert 0.1 <= tdiff <= 0.2, 'did not stop within allowed time'
+-
+-
+ def test_close_popen_stdin_with_close_fds():
+     p = subprocess.Popen(
+         ['ls'],

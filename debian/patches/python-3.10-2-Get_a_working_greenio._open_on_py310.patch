@@ -1,0 +1,26 @@
+Description: Get a working greenio._open on py310
+ _pyio.open is now a staticmethod, so we've got to go down to
+ _pyio.open.__wrapped__ to get to the python function object.
+Author: Tim Burke <tim.burke@gmail.com>
+Date: Fri, 11 Jun 2021 12:56:07 -0700
+Origin: https://github.com/eventlet/eventlet/pull/715/commits/ccf6db2df4edd1a7dda671515df20edd846a7f53
+Last-Update: 2021-11-12
+
+diff --git a/eventlet/greenio/py3.py b/eventlet/greenio/py3.py
+index 7a75b52c0..bc3dc9499 100644
+--- a/eventlet/greenio/py3.py
++++ b/eventlet/greenio/py3.py
+@@ -191,9 +191,12 @@ def __exit__(self, *args):
+     FileIO=GreenFileIO,
+     os=_original_os,
+ ))
++if hasattr(_original_pyio, 'text_encoding'):
++    _open_environment['text_encoding'] = _original_pyio.text_encoding
+ 
++_pyio_open = getattr(_original_pyio.open, '__wrapped__', _original_pyio.open)
+ _open = FunctionType(
+-    six.get_function_code(_original_pyio.open),
++    six.get_function_code(_pyio_open),
+     _open_environment,
+ )
+ 

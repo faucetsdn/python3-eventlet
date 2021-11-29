@@ -12,8 +12,10 @@ instead.
  eventlet/tpool.py   |  4 ++--
  2 files changed, 7 insertions(+), 7 deletions(-)
 
---- a/eventlet/patcher.py
-+++ b/eventlet/patcher.py
+Index: python-eventlet/eventlet/patcher.py
+===================================================================
+--- python-eventlet.orig/eventlet/patcher.py
++++ python-eventlet/eventlet/patcher.py
 @@ -1,4 +1,7 @@
 -import imp
 +try:
@@ -21,10 +23,12 @@ instead.
 +except ImportError:
 +    import imp
  import sys
- 
- import eventlet
---- a/eventlet/tpool.py
-+++ b/eventlet/tpool.py
+ try:
+     # Only for this purpose, it's irrelevant if `os` was already patched.
+Index: python-eventlet/eventlet/tpool.py
+===================================================================
+--- python-eventlet.orig/eventlet/tpool.py
++++ python-eventlet/eventlet/tpool.py
 @@ -14,7 +14,10 @@
  # limitations under the License.
  

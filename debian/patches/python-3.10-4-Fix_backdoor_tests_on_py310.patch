@@ -1,0 +1,31 @@
+Description: Fix backdoor tests on py310
+ Python 3.10 started including build info on the version line, so the
+ expectation in tests had to change. Also, start printing the banner as
+ we read it to aid in future debugging.
+Author: Tim Burke <tim.burke@gmail.com>
+Date: Fri, 11 Jun 2021 13:07:09 -0700
+Origin: https://github.com/eventlet/eventlet/pull/715/commits/2ea6991d26eef98300d27c3c5d383eccc65360c3
+Last-Update: 2021-11-12
+
+diff --git a/tests/backdoor_test.py b/tests/backdoor_test.py
+index 03a569259..1e09f09b6 100644
+--- a/tests/backdoor_test.py
++++ b/tests/backdoor_test.py
+@@ -1,5 +1,6 @@
+ import os
+ import os.path
++import sys
+ 
+ import eventlet
+ 
+@@ -22,7 +23,9 @@ def test_server(self):
+     def _run_test_on_client_and_server(self, client, server_thread):
+         f = client.makefile('rw')
+         assert 'Python' in f.readline()
+-        f.readline()  # build info
++        if sys.version_info < (3, 10):
++            # Starting in py310, build info is included in version line
++            f.readline()  # build info
+         f.readline()  # help info
+         assert 'InteractiveConsole' in f.readline()
+         self.assertEqual('>>> ', f.read(4))

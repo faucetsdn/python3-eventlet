@@ -1,0 +1,16 @@
+Description: Fix test_noraise_dns_tcp()
+Author: Thomas Goirand <zigo@debian.org>
+Forwarded: no
+Last-Update: 2020-09-30
+
+--- python-eventlet-0.26.1.orig/tests/greendns_test.py
++++ python-eventlet-0.26.1/tests/greendns_test.py
+@@ -901,7 +901,7 @@ class TinyDNSTests(tests.LimitedTestCase
+             resolver.nameserver_ports[dnsaddr[0]] = dnsaddr[1]
+             response = resolver.query('host.example.com', 'a', tcp=True)
+             self.assertIsInstance(response, Answer)
+-            self.assertEqual(response.rrset.items[0].address, expected_ip)
++            self.assertEqual([rr.address for rr in response.rrset.items], [expected_ip]) 
+ 
+ 
+ def test_reverse_name():
