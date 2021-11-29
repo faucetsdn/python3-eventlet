@@ -12,6 +12,8 @@ jobs:
   debian-package:
     name: "Build debian package"
     runs-on: ubuntu-latest
+    environment:
+      name: "release"
     container:
       image: "debian:latest"
     steps:
